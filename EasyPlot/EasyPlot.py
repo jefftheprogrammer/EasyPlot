@@ -113,6 +113,8 @@ class DataFromFile:
 
 
 class Graph:
+    def __init__(self):
+        self.data = None
 
     @staticmethod
     def choose_marker():
@@ -137,14 +139,70 @@ d:diamond
 _:horizontal line
 """)
 
+    @staticmethod
+    def check(data):
+        sameness_unit = True
+        sameness_variable_name = True
+        sep_subplots_req = False
+        if len(data) > 2:
+            for a in range(1, len(data) - 1):
+                if data["x1"]["DATA"].unit != data["x{}".format(a)]["DATA"].unit:
+                    sameness_unit = False
+                if data["x1"]["DATA"].name != data["x{}".format(a)]["DATA"].name:
+                    sameness_name = False
+
+        if sameness_unit == False or sameness_variable_name == False:
+            sep_subplots_req = True
+
+        return sep_subplots_req
+
+    @staticmethod
+    def choose_setting(marker_name):
+        print("please choose setting for {}".format(marker_name))
+        setting = {}
+        setting["marker"] = input("please choose marker")
+        setting["color"] = input("please choose color")
+        setting["capsize"] = 1.0
+        return setting
+
+    def plot_same_sbplt(self):
+        plt.xlabel("{} ({})".format(self.data["x1"]["DATA"].name, self.data["x1"]["DATA"].unit))
+        plt.ylabel("{} ({})".format(self.data["y"]["DATA"].name, self.data["y"]["DATA"].unit))
+
+        for a in range(1, len(self.data)):
+            marker = "x{}".format(a)
+            setting = Graph.choose_setting(marker)
+            plt.errorbar(self.data[marker]["DATA"].data, self.data["y"]["DATA"].data,
+                         xerr=self.data[marker]["ERROR"].data, yerr=self.data["y"]["ERROR"].data,
+                         marker=setting["marker"], color=setting["color"], capsize=setting["capsize"])
+
+        plt.show()
+
+    def plot_diff_sbplt(self):
+        objs = []
+        print("You have {} x variables, please type in the configuration".format(len(self.data) - 1))
+
+        for a in range(1, len(self.data) - 1):
+            nrows = int(input("nrows:"))
+            ncols = int(input("ncols:"))
+            index = int(input("index"))
+            marker = "x{}".format(a)
+            objs.append(plt.subplot(nrows, ncols, index))
+            setting = Graph.choose_setting(marker)
+            objs[a - 1].errorbar(self.data[marker]["DATA"].data, self.data["y"]["DATA"].data,
+                                 xerr=data[marker]["ERROR"].data, yerr=data["y"]["ERROR"].data,
+                                 marker=setting["marker"], color=setting["color"], capsize=setting["capsize"])
+
+        plt.show()
+
     def scatterPlot(self):
         D = DataFromFile()
-        data = D.get_data()
-        plt.xlabel("{} ({})".format(data["x1"]["DATA"].name, data["x1"]["DATA"].unit))
-        plt.ylabel("{} ({})".format(data["y"]["DATA"].name, data["y"]["DATA"].unit))
-        # plt.errorbar(data["x1"]["ERROR"].data, data["y"]["ERROR"].data)
-        plt.scatter(data["x1"]["DATA"].data, data["y"]["DATA"].data)
-        plt.show()
+        self.data = D.get_data()
+        sep_subplots = Graph.check(self.data)
+        if sep_subplots == True:
+            self.plot_diff_sbplt()
+        elif sep_subplots == False:
+            self.plot_same_sbplt()
 
 
 G = Graph()
